@@ -1,0 +1,12 @@
+sounddevice
+soundfile
+numpy
+groq
+pynput
+pystray
+pyperclip
+Pillow
+python-dotenv
+webrtcvad
+pywin32
+winshell
