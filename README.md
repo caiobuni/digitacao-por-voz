@@ -13,8 +13,9 @@ O objetivo do Verbatim é oferecer uma experiência **imediata e fluida**: você
  O Verbatim utiliza três pilares principais para seu funcionamento:
  
 1. **Atalho Global Silencioso**: Configuramos a tecla `Pause/Break` como o gatilho principal. Por ser uma tecla sem função na maioria dos editores de texto modernos, ela não suja a sua tela com caracteres indesejados enquanto você a segura.
-2. **Transcrição de Alta Precisão (Whisper V3 via Groq)**: Ao soltar a tecla (ou após uma breve pausa na sua fala - VAD), o áudio é enviado para a API ultra-rápida do Groq utilizando o modelo open-source `whisper-large-v3`. O sistema envia "contextos de pontuação" para a IA, obrigando-a a devolver o texto com gramática e pontuação impecáveis, ignorando ruídos e silêncios puros (temperatura 0.0) para não alucinar textos inexistentes.
-3. **Escrita Mágica**: A resposta da transcrição é jogada na sua área de transferência e colada no seu cursor ativo instantaneamente simulando um `Ctrl+V`. Logo em seguida, a sua área de transferência original é restaurada para você não perder links ou textos copiados anteriormente.
+2. **Media Auto-Pause**: Ao segurar a tecla de gravação, o app envia um comando invisível ao Windows para pausar imediatamente qualquer música ou vídeo que esteja tocando. Ao soltar a tecla, o comando de *Play* é enviado novamente.
+3. **Transcrição de Alta Precisão (Whisper V3 via Groq)**: Ao soltar a tecla (ou após uma breve pausa na sua fala - VAD), o áudio é enviado para a API ultra-rápida do Groq utilizando o modelo open-source `whisper-large-v3`. O sistema envia "contextos de pontuação" para a IA, obrigando-a a devolver o texto com gramática e pontuação impecáveis, ignorando ruídos e silêncios puros (temperatura 0.0) para não alucinar textos inexistentes.
+4. **Escrita Mágica**: A resposta da transcrição é jogada na sua área de transferência e colada no seu cursor ativo instantaneamente simulando um `Ctrl+V`. Logo em seguida, a sua área de transferência original é restaurada para você não perder links ou textos copiados anteriormente.
 
 Além disso, todas as suas transcrições ficam guardadas localmente num log de histórico (`transcriptions.md`), acessível direto pelo ícone azul com um "V" perto do seu relógio do Windows.
 

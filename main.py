@@ -29,6 +29,16 @@ class VerbatimApp:
             self.typer.paste_text(text)
             self.logger.log(text)
 
+    def _toggle_media(self):
+        """Tenta enviar o comando de Play/Pause de mídia."""
+        try:
+            from pynput.keyboard import Controller, Key
+            keyboard_controller = Controller()
+            keyboard_controller.press(Key.media_play_pause)
+            keyboard_controller.release(Key.media_play_pause)
+        except Exception as e:
+            print(f"Could not toggle media: {e}")
+
     def on_press(self, key):
         if not self.running:
             return False
@@ -36,7 +46,8 @@ class VerbatimApp:
         # Tecla Pause/Break
         if key == keyboard.Key.pause:
             if not self.is_recording:
-                print(">>> Recording started")
+                print(">>> Recording started (Media Paused)")
+                self._toggle_media()
                 self.is_recording = True
                 self.recorder.start()
 
@@ -44,9 +55,10 @@ class VerbatimApp:
         # Tecla Pause/Break
         if key == keyboard.Key.pause:
             if self.is_recording:
-                print("<<< Recording stopped")
+                print("<<< Recording stopped (Media Resumed)")
                 self.is_recording = False
                 self.recorder.stop()
+                self._toggle_media()
 
     def run(self):
         # Start Tray in a separate thread
