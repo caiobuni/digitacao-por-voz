@@ -10,3 +10,4 @@ python-dotenv
 webrtcvad
 pywin32
 winshell
+pycaw
