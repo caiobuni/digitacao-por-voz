@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import threading
 from pynput import keyboard
@@ -22,14 +23,27 @@ class VerbatimApp:
         self.running = True
         self._media_was_playing = False
 
+    @staticmethod
+    def _clean_text(text):
+        if not text:
+            return text
+        text = re.sub(r'\.{2,}', ' ', text)
+        text = re.sub(r'…+', ' ', text)
+        text = re.sub(r'(?:\.\s+){2,}\.', ' ', text)
+        text = re.sub(r'\s{2,}', ' ', text)
+        text = text.strip()
+        return text
+
     def _process_phrase(self, audio_path):
         """Callback from AudioRecorder when a phrase is ready."""
         print(f"Processing phrase from {audio_path}...")
         text = self.transcriber.transcribe(audio_path)
         if text:
-            print(f"Transcribed: {text}")
-            self.typer.paste_text(text)
-            self.logger.log(text)
+            text = self._clean_text(text)
+            if text:
+                print(f"Transcribed: {text}")
+                self.typer.paste_text(text)
+                self.logger.log(text)
 
     def _toggle_media(self):
         """Tenta enviar o comando de Play/Pause de mídia."""
@@ -42,35 +56,28 @@ class VerbatimApp:
             print(f"Could not toggle media: {e}")
 
     def _is_media_playing(self):
-        """Check if audio is actually being output via system peak meter."""
         result = [False]
         def _check():
             try:
                 import pythoncom
-                import comtypes
-                from pycaw.api.endpointvolume import IAudioMeterInformation
-                from pycaw.constants import CLSID_MMDeviceEnumerator, EDataFlow, ERole
-                from pycaw.api.mmdeviceapi import IMMDeviceEnumerator
+                from pycaw.utils import AudioUtilities
 
                 pythoncom.CoInitialize()
-                device_enum = comtypes.CoCreateInstance(
-                    CLSID_MMDeviceEnumerator,
-                    IMMDeviceEnumerator,
-                    comtypes.CLSCTX_INPROC_SERVER
-                )
-                device = device_enum.GetDefaultAudioEndpoint(
-                    EDataFlow.eRender.value,
-                    ERole.eMultimedia.value
-                )
-                meter = device.Activate(
-                    IAudioMeterInformation._iid_,
-                    comtypes.CLSCTX_ALL,
-                    None
-                ).QueryInterface(IAudioMeterInformation)
-                peak = meter.GetPeakValue()
-                result[0] = peak > 0.001
+
+                def _has_active_session():
+                    sessions = AudioUtilities.GetAllSessions()
+                    for s in sessions:
+                        if s.State == 2 and s.Process is not None:
+                            return True
+                    return False
+
+                first = _has_active_session()
+                if first:
+                    time.sleep(0.2)
+                    second = _has_active_session()
+                    result[0] = second
             except Exception as e:
-                print(f"Could not check audio state: {e}")
+                print(f"Could not check media state: {e}")
             finally:
                 try:
                     pythoncom.CoUninitialize()
@@ -78,7 +85,7 @@ class VerbatimApp:
                     pass
         t = threading.Thread(target=_check, daemon=True)
         t.start()
-        t.join(timeout=0.5)
+        t.join(timeout=1.0)
         return result[0]
 
     def on_press(self, key):

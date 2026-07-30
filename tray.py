@@ -10,16 +10,21 @@ class TrayApp:
         self._create_icon()
 
     def _create_icon(self):
-        # Create a simple icon (Circle with a V for Verbatim)
         width = 64
         height = 64
         image = Image.new('RGB', (width, height), (30, 30, 30))
         dc = ImageDraw.Draw(image)
-        # Draw a circle
-        dc.ellipse([5, 5, 59, 59], fill=(0, 150, 255))
-        # Draw a 'V'
-        dc.text((25, 20), "V", fill="white")
-        
+
+        mic_color = (200, 220, 255)
+
+        dc.rounded_rectangle([22, 6, 42, 34], radius=10, fill=mic_color)
+
+        dc.arc([14, 20, 50, 48], start=0, end=180, fill=mic_color, width=3)
+
+        dc.line([(32, 48), (32, 56)], fill=mic_color, width=3)
+
+        dc.line([(22, 56), (42, 56)], fill=mic_color, width=3)
+
         self.icon = pystray.Icon(
             "verbatim",
             image,
