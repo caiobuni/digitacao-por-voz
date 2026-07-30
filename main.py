@@ -16,7 +16,6 @@ class VerbatimApp:
         self.typer = TextOut()
         self.logger = HistoryLogger()
         
-        # Connect recorder to transcription and output
         self.recorder.on_phrase_complete = self._process_phrase
         
         self.is_recording = False
@@ -35,7 +34,6 @@ class VerbatimApp:
         return text
 
     def _process_phrase(self, audio_path):
-        """Callback from AudioRecorder when a phrase is ready."""
         print(f"Processing phrase from {audio_path}...")
         text = self.transcriber.transcribe(audio_path)
         if text:
@@ -46,7 +44,6 @@ class VerbatimApp:
                 self.logger.log(text)
 
     def _toggle_media(self):
-        """Tenta enviar o comando de Play/Pause de mídia."""
         try:
             from pynput.keyboard import Controller, Key
             keyboard_controller = Controller()
@@ -61,20 +58,29 @@ class VerbatimApp:
             try:
                 import pythoncom
                 from pycaw.utils import AudioUtilities
+                from pycaw.pycaw import IAudioMeterInformation
 
                 pythoncom.CoInitialize()
 
-                def _has_active_session():
+                def _has_playing_session():
                     sessions = AudioUtilities.GetAllSessions()
                     for s in sessions:
-                        if s.State == 2 and s.Process is not None:
-                            return True
+                        if s.Process is None:
+                            continue
+                        if s.State != 1:
+                            continue
+                        try:
+                            meter = s._ctl.QueryInterface(IAudioMeterInformation)
+                            if meter.GetPeakValue() > 0.0:
+                                return True
+                        except Exception:
+                            pass
                     return False
 
-                first = _has_active_session()
+                first = _has_playing_session()
                 if first:
-                    time.sleep(0.2)
-                    second = _has_active_session()
+                    time.sleep(0.15)
+                    second = _has_playing_session()
                     result[0] = second
             except Exception as e:
                 print(f"Could not check media state: {e}")
@@ -92,7 +98,6 @@ class VerbatimApp:
         if not self.running:
             return False
 
-        # Tecla Pause/Break
         if key == keyboard.Key.pause:
             if not self.is_recording:
                 self._media_was_playing = self._is_media_playing()
@@ -105,7 +110,6 @@ class VerbatimApp:
                 self.recorder.start()
 
     def on_release(self, key):
-        # Tecla Pause/Break
         if key == keyboard.Key.pause:
             if self.is_recording:
                 self.is_recording = False
@@ -118,7 +122,6 @@ class VerbatimApp:
                 self._media_was_playing = False
 
     def run(self):
-        # Start Tray in a separate thread
         self.tray = TrayApp(
             on_open_log=self.logger.open_log,
             on_quit=self.quit
@@ -128,7 +131,6 @@ class VerbatimApp:
 
         print("Verbatim is running. Hold the 'Pause/Break' key to speak.")
         
-        # Start Keyboard Listener in the main thread
         with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
             self.kb_listener = listener
             listener.join()
