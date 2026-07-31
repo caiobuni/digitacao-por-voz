@@ -22,6 +22,17 @@ class VerbatimApp:
         self.running = True
         self._media_was_playing = False
 
+    HALLUCINATION_PHRASES = {
+        "legenda por sônia ruberti",
+        "legenda por sonia ruberti",
+        "obrigado",
+        "obrigado!",
+        "thanks for watching",
+        "thank you for watching",
+        "inscreva-se no canal",
+        "deixe seu like",
+    }
+
     @staticmethod
     def _clean_text(text):
         if not text:
@@ -37,6 +48,9 @@ class VerbatimApp:
         print(f"Processing phrase from {audio_path}...")
         text = self.transcriber.transcribe(audio_path)
         if text:
+            if text.strip().lower() in self.HALLUCINATION_PHRASES:
+                print(f"Filtered hallucination: {text}")
+                return
             text = self._clean_text(text)
             if text:
                 print(f"Transcribed: {text}")
