@@ -33,6 +33,9 @@ class VerbatimApp:
         "thank you for watching",
         "inscreva-se no canal",
         "deixe seu like",
+        "acesse o site www.sara.org.br",
+        "acesse o site sara.org.br",
+        "www.sara.org.br",
     }
 
     @staticmethod
