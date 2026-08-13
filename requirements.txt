@@ -4,7 +4,6 @@ numpy
 groq
 pynput
 pystray
-pyperclip
 Pillow
 python-dotenv
 webrtcvad

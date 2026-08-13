@@ -54,7 +54,7 @@ class VerbatimApp:
             text = self._clean_text(text)
             if text:
                 print(f"Transcribed: {text}")
-                self.typer.paste_text(text + " ")
+                self.typer.insert_text(text + " ")
                 self.logger.log(text)
 
     def _toggle_media(self):
