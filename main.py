@@ -8,11 +8,13 @@ from transcriber import GroqTranscriber
 from typer import TextOut
 from logger import HistoryLogger
 from tray import TrayApp
+from corretor import Corretor
 
 class VerbatimApp:
     def __init__(self):
         self.recorder = AudioRecorder(silence_duration=0.8)
-        self.transcriber = GroqTranscriber()
+        self.corretor = Corretor()
+        self.transcriber = GroqTranscriber(vocabulary=self.corretor.vocabulary)
         self.typer = TextOut()
         self.logger = HistoryLogger()
         
@@ -53,9 +55,11 @@ class VerbatimApp:
                 return
             text = self._clean_text(text)
             if text:
-                print(f"Transcribed: {text}")
-                self.typer.insert_text(text + " ")
-                self.logger.log(text)
+                text = self.corretor.corrigir(text)
+                if text:
+                    print(f"Transcribed: {text}")
+                    self.typer.insert_text(text + " ")
+                    self.logger.log(text)
 
     def _toggle_media(self):
         try:

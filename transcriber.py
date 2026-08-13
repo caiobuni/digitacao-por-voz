@@ -6,21 +6,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class GroqTranscriber:
-    def __init__(self, api_key=None, model="whisper-large-v3"):
+    def __init__(self, api_key=None, model="whisper-large-v3", vocabulary=None):
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
         if not self.api_key:
             raise ValueError("GROQ_API_KEY not found in environment or arguments.")
         self.client = Groq(api_key=self.api_key)
         self.model = model
         
-        # O parâmetro 'prompt' no Whisper não é um comando (instruction prompt), 
-        # mas sim um 'contexto' (texto anterior). Para forçar boa pontuação e coerência, 
-        # passamos um exemplo de texto bem escrito e pontuado.
         self.system_prompt = (
             "Olá! Tudo bem? Esta é uma transcrição em português do Brasil com "
             "excelente gramática, pontuação perfeita e clareza. Letras maiúsculas, "
             "vírgulas e pontos finais são usados corretamente."
         )
+        if vocabulary:
+            self.system_prompt += " Vocabulário frequente: " + ", ".join(vocabulary) + "."
 
     def transcribe(self, audio_file_path):
         """Transcribes the given audio file using Groq's Whisper API."""
