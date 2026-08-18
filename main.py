@@ -36,6 +36,13 @@ class VerbatimApp:
         "acesse o site www.sara.org.br",
         "acesse o site sara.org.br",
         "www.sara.org.br",
+        "acesse o site www.sara.org.br para mais informações",
+        "acesse o site www.sara.org.br para mais informações.",
+        "acesse o site sara.org.br para mais informações",
+        "acesse o site sara.org.br para mais informações.",
+        "atenção",
+        "atenção!",
+        "atenção.",
     }
 
     @staticmethod
