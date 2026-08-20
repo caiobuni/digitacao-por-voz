@@ -43,6 +43,13 @@ class VerbatimApp:
         "atenção",
         "atenção!",
         "atenção.",
+        "agradecimentos a todos os participantes",
+        "agradecimentos a todos os participantes.",
+        "acompanhe a produção de vídeos e ativos em nosso site",
+        "acompanhe a produção de vídeos e ativos em nosso site.",
+        "tudo bem",
+        "tudo bem?",
+        "tudo bem.",
     }
 
     @staticmethod
