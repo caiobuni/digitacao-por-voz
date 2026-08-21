@@ -55,6 +55,8 @@ class VerbatimApp:
         "aprende com o curso",
         "aprende com o curso!",
         "aprende com o curso.",
+        "se você quer ver o vídeo em português, clique no botão de curtir",
+        "se você quer ver o vídeo em português, clique no botão de curtir.",
     }
 
     @staticmethod
