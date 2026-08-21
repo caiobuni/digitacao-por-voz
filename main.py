@@ -52,6 +52,9 @@ class VerbatimApp:
         "tudo bem.",
         "a transcrição é só para mostrar a qualidade do conteúdo",
         "a transcrição é só para mostrar a qualidade do conteúdo.",
+        "aprende com o curso",
+        "aprende com o curso!",
+        "aprende com o curso.",
     }
 
     @staticmethod
