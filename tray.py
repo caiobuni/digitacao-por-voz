@@ -13,9 +13,10 @@ def _draw_mic(color):
 
 
 class TrayApp:
-    def __init__(self, on_open_log=None, on_open_dict=None, on_quit=None):
+    def __init__(self, on_open_log=None, on_open_dict=None, on_open_blacklist=None, on_quit=None):
         self.on_open_log = on_open_log
         self.on_open_dict = on_open_dict
+        self.on_open_blacklist = on_open_blacklist
         self.on_quit = on_quit
         self.icon = None
         self._idle_image = _draw_mic((200, 220, 255))
@@ -30,6 +31,7 @@ class TrayApp:
             menu=pystray.Menu(
                 pystray.MenuItem("Abrir Histórico", self._handle_open_log),
                 pystray.MenuItem("Abrir dicionário", self._handle_open_dict),
+                pystray.MenuItem("Abrir lista negra", self._handle_open_blacklist),
                 pystray.MenuItem("Sair", self._wrapper_quit)
             )
         )
@@ -49,6 +51,10 @@ class TrayApp:
     def _handle_open_dict(self, icon, item):
         if self.on_open_dict:
             self.on_open_dict()
+
+    def _handle_open_blacklist(self, icon, item):
+        if self.on_open_blacklist:
+            self.on_open_blacklist()
 
     def _wrapper_quit(self, icon, item):
         if self.on_quit:

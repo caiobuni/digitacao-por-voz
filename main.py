@@ -147,6 +147,7 @@ class VerbatimApp:
         self.tray = TrayApp(
             on_open_log=self.logger.open_log,
             on_open_dict=lambda: os.startfile(self.corretor.path),
+            on_open_blacklist=lambda: os.startfile(self.blacklist.path),
             on_quit=self.quit
         )
         tray_thread = threading.Thread(target=self.tray.run, daemon=True)
