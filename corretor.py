@@ -13,10 +13,12 @@ class Corretor:
         self.path = path
         self._rules = []
         self._vocabulary = []
+        self._mtime = None
         self._load()
 
     def _load(self):
         try:
+            mtime = os.path.getmtime(self.path)
             with open(self.path, "r", encoding="utf-8") as f:
                 data = json.load(f)
         except Exception as e:
@@ -33,8 +35,18 @@ class Corretor:
         rules.sort(key=lambda r: r[0], reverse=True)
         self._rules = rules
         self._vocabulary = vocabulary
+        self._mtime = mtime
+
+    def _reload_if_changed(self):
+        try:
+            mtime = os.path.getmtime(self.path)
+        except OSError:
+            return
+        if self._mtime is None or mtime != self._mtime:
+            self._load()
 
     def corrigir(self, texto):
+        self._reload_if_changed()
         if not texto:
             return texto
         for _, pattern, correto in self._rules:

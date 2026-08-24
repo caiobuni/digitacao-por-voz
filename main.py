@@ -9,12 +9,17 @@ from typer import TextOut
 from logger import HistoryLogger
 from tray import TrayApp
 from corretor import Corretor
+from blacklist import Blacklist
+from editor import TextEditor
+from sounds import play_start, play_stop
 
 class VerbatimApp:
     def __init__(self):
         self.recorder = AudioRecorder(silence_duration=0.8)
         self.corretor = Corretor()
+        self.blacklist = Blacklist()
         self.transcriber = GroqTranscriber(vocabulary=self.corretor.vocabulary)
+        self.editor = TextEditor(vocabulary=self.corretor.vocabulary)
         self.typer = TextOut()
         self.logger = HistoryLogger()
         
@@ -23,41 +28,6 @@ class VerbatimApp:
         self.is_recording = False
         self.running = True
         self._media_was_playing = False
-
-    HALLUCINATION_PHRASES = {
-        "legenda por sônia ruberti",
-        "legenda por sonia ruberti",
-        "obrigado",
-        "obrigado!",
-        "thanks for watching",
-        "thank you for watching",
-        "inscreva-se no canal",
-        "deixe seu like",
-        "acesse o site www.sara.org.br",
-        "acesse o site sara.org.br",
-        "www.sara.org.br",
-        "acesse o site www.sara.org.br para mais informações",
-        "acesse o site www.sara.org.br para mais informações.",
-        "acesse o site sara.org.br para mais informações",
-        "acesse o site sara.org.br para mais informações.",
-        "atenção",
-        "atenção!",
-        "atenção.",
-        "agradecimentos a todos os participantes",
-        "agradecimentos a todos os participantes.",
-        "acompanhe a produção de vídeos e ativos em nosso site",
-        "acompanhe a produção de vídeos e ativos em nosso site.",
-        "tudo bem",
-        "tudo bem?",
-        "tudo bem.",
-        "a transcrição é só para mostrar a qualidade do conteúdo",
-        "a transcrição é só para mostrar a qualidade do conteúdo.",
-        "aprende com o curso",
-        "aprende com o curso!",
-        "aprende com o curso.",
-        "se você quer ver o vídeo em português, clique no botão de curtir",
-        "se você quer ver o vídeo em português, clique no botão de curtir.",
-    }
 
     @staticmethod
     def _clean_text(text):
@@ -74,16 +44,20 @@ class VerbatimApp:
         print(f"Processing phrase from {audio_path}...")
         text = self.transcriber.transcribe(audio_path)
         if text:
-            if text.strip().lower() in self.HALLUCINATION_PHRASES:
+            text = self._clean_text(text)
+            if not text:
+                return
+            if self.blacklist.is_blocked(text):
                 print(f"Filtered hallucination: {text}")
                 return
-            text = self._clean_text(text)
+            text = self.corretor.corrigir(text)
             if text:
-                text = self.corretor.corrigir(text)
-                if text:
-                    print(f"Transcribed: {text}")
-                    self.typer.insert_text(text + " ")
-                    self.logger.log(text)
+                self.editor.vocabulary = self.corretor.vocabulary
+                text = self.editor.edit(text)
+            if text:
+                print(f"Transcribed: {text}")
+                self.typer.insert_text(text + " ")
+                self.logger.log(text)
 
     def _toggle_media(self):
         try:
@@ -148,6 +122,9 @@ class VerbatimApp:
                     self._toggle_media()
                 else:
                     print(">>> Recording started (No media playing)")
+                play_start()
+                if hasattr(self, "tray"):
+                    self.tray.set_recording(True)
                 self.is_recording = True
                 self.recorder.start()
 
@@ -156,6 +133,9 @@ class VerbatimApp:
             if self.is_recording:
                 self.is_recording = False
                 self.recorder.stop()
+                if hasattr(self, "tray"):
+                    self.tray.set_recording(False)
+                play_stop()
                 if self._media_was_playing:
                     print("<<< Recording stopped (Media Resumed)")
                     self._toggle_media()
@@ -166,6 +146,7 @@ class VerbatimApp:
     def run(self):
         self.tray = TrayApp(
             on_open_log=self.logger.open_log,
+            on_open_dict=lambda: os.startfile(self.corretor.path),
             on_quit=self.quit
         )
         tray_thread = threading.Thread(target=self.tray.run, daemon=True)
