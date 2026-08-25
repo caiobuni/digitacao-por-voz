@@ -10,7 +10,6 @@ from logger import HistoryLogger, debug
 from tray import TrayApp
 from corretor import Corretor
 from blacklist import Blacklist
-from editor import TextEditor
 from sounds import play_start, play_stop
 
 class VerbatimApp:
@@ -19,7 +18,6 @@ class VerbatimApp:
         self.corretor = Corretor()
         self.blacklist = Blacklist()
         self.transcriber = GroqTranscriber(vocabulary=self.corretor.vocabulary)
-        self.editor = TextEditor(vocabulary=self.corretor.vocabulary)
         self.typer = TextOut()
         self.logger = HistoryLogger()
         
@@ -58,11 +56,6 @@ class VerbatimApp:
                 debug(f"Filtered hallucination: {text}")
                 return
             text = self.corretor.corrigir(text)
-            if text:
-                self.editor.vocabulary = self.corretor.vocabulary
-                edited = self.editor.edit(text)
-                debug(f"After editor: {edited!r}")
-                text = edited
             if text:
                 debug(f"Inserting: {text!r}")
                 self.typer.insert_text(text + " ")
