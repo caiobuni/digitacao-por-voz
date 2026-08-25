@@ -1,6 +1,19 @@
 import os
 from datetime import datetime
 
+DEBUG_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "verbatim.log")
+
+
+def debug(msg):
+    line = f"{datetime.now().strftime('%H:%M:%S')} {msg}"
+    print(line)
+    try:
+        with open(DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
+
+
 class HistoryLogger:
     def __init__(self, filename="transcriptions.md"):
         self.filename = filename

@@ -6,7 +6,7 @@ from pynput import keyboard
 from recorder import AudioRecorder
 from transcriber import GroqTranscriber
 from typer import TextOut
-from logger import HistoryLogger
+from logger import HistoryLogger, debug
 from tray import TrayApp
 from corretor import Corretor
 from blacklist import Blacklist
@@ -41,23 +41,34 @@ class VerbatimApp:
         return text
 
     def _process_phrase(self, audio_path):
-        print(f"Processing phrase from {audio_path}...")
-        text = self.transcriber.transcribe(audio_path)
-        if text:
-            text = self._clean_text(text)
+        threading.Thread(target=self._process_phrase_worker, args=(audio_path,), daemon=True).start()
+
+    def _process_phrase_worker(self, audio_path):
+        try:
+            debug(f"Processing phrase from {audio_path}...")
+            text = self.transcriber.transcribe(audio_path)
+            debug(f"Whisper raw: {text!r}")
             if not text:
                 return
+            text = self._clean_text(text)
+            if not text:
+                debug("Empty after clean.")
+                return
             if self.blacklist.is_blocked(text):
-                print(f"Filtered hallucination: {text}")
+                debug(f"Filtered hallucination: {text}")
                 return
             text = self.corretor.corrigir(text)
             if text:
                 self.editor.vocabulary = self.corretor.vocabulary
-                text = self.editor.edit(text)
+                edited = self.editor.edit(text)
+                debug(f"After editor: {edited!r}")
+                text = edited
             if text:
-                print(f"Transcribed: {text}")
+                debug(f"Inserting: {text!r}")
                 self.typer.insert_text(text + " ")
                 self.logger.log(text)
+        except Exception as e:
+            debug(f"Process phrase failed: {e}")
 
     def _toggle_media(self):
         try:
@@ -118,10 +129,10 @@ class VerbatimApp:
             if not self.is_recording:
                 self._media_was_playing = self._is_media_playing()
                 if self._media_was_playing:
-                    print(">>> Recording started (Media Paused)")
+                    debug(">>> Recording started (Media Paused)")
                     self._toggle_media()
                 else:
-                    print(">>> Recording started (No media playing)")
+                    debug(">>> Recording started (No media playing)")
                 play_start()
                 if hasattr(self, "tray"):
                     self.tray.set_recording(True)
@@ -129,7 +140,7 @@ class VerbatimApp:
                 try:
                     self.recorder.start()
                 except Exception as e:
-                    print(f"Failed to start recorder: {e}")
+                    debug(f"Failed to start recorder: {e}")
                     self.is_recording = False
                     if hasattr(self, "tray"):
                         self.tray.set_recording(False)
@@ -143,10 +154,10 @@ class VerbatimApp:
                     self.tray.set_recording(False)
                 play_stop()
                 if self._media_was_playing:
-                    print("<<< Recording stopped (Media Resumed)")
+                    debug("<<< Recording stopped (Media Resumed)")
                     self._toggle_media()
                 else:
-                    print("<<< Recording stopped")
+                    debug("<<< Recording stopped")
                 self._media_was_playing = False
 
     def run(self):

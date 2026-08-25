@@ -6,9 +6,10 @@ import sounddevice as sd
 import soundfile as sf
 import tempfile
 import time
+from logger import debug
 
 class AudioRecorder:
-    def __init__(self, sample_rate=16000, channels=1, silence_threshold=0.01, silence_duration=1.0):
+    def __init__(self, sample_rate=16000, channels=1, silence_threshold=0.0008, silence_duration=1.0):
         self.sample_rate = sample_rate
         self.channels = channels
         self.silence_threshold = silence_threshold
@@ -18,11 +19,12 @@ class AudioRecorder:
         self.stream = None
         self.chunks = []
         self.last_speech_time = time.time()
-        self.on_phrase_complete = None # Callback function(file_path)
+        self.heard_speech = False
+        self.on_phrase_complete = None
 
     def _audio_callback(self, indata, frames, time_info, status):
         if status:
-            print(f"Error in audio stream: {status}")
+            debug(f"Error in audio stream: {status}")
         self.audio_queue.put(indata.copy())
 
     def start(self):
@@ -31,14 +33,19 @@ class AudioRecorder:
         
         self.recording = True
         self.chunks = []
+        self.heard_speech = False
         self.last_speech_time = time.time()
         try:
             sd.stop()
         except Exception:
             pass
+        device = sd.default.device[0]
+        debug(f"Mic device: {sd.query_devices(device)['name']}")
         self.stream = sd.InputStream(
             samplerate=self.sample_rate,
             channels=self.channels,
+            dtype="float32",
+            device=device,
             callback=self._audio_callback
         )
         self.stream.start()
@@ -53,11 +60,17 @@ class AudioRecorder:
         if self.stream:
             self.stream.stop()
             self.stream.close()
+            self.stream = None
         
         if self.recording_thread.is_alive():
-            self.recording_thread.join()
+            self.recording_thread.join(timeout=2.0)
         
-        # Save any remaining audio as the final phrase
+        while True:
+            try:
+                self.chunks.append(self.audio_queue.get_nowait())
+            except queue.Empty:
+                break
+        
         if self.chunks:
             self._save_and_callback()
 
@@ -67,27 +80,28 @@ class AudioRecorder:
                 data = self.audio_queue.get(timeout=0.1)
                 self.chunks.append(data)
                 
-                # Simple VAD based on amplitude
                 if np.max(np.abs(data)) > self.silence_threshold:
                     self.last_speech_time = time.time()
-                else:
-                    # Check for silence duration
+                    self.heard_speech = True
+                elif self.heard_speech:
                     if time.time() - self.last_speech_time > self.silence_duration and len(self.chunks) > 10:
-                        # Significant silence detected after some audio
                         self._save_and_callback()
             except queue.Empty:
                 continue
 
     def _save_and_callback(self):
         if not self.chunks:
+            debug("No audio chunks to save.")
             return
         
         audio_data = np.concatenate(self.chunks, axis=0)
-        self.chunks = [] # Reset for next phrase
+        self.chunks = []
+        peak = float(np.max(np.abs(audio_data)))
+        duration = len(audio_data) / float(self.sample_rate)
+        debug(f"Audio peak={peak:.6f} duration={duration:.2f}s")
         
-        # Discard audio if it's entirely silence
-        if np.max(np.abs(audio_data)) <= self.silence_threshold:
-            print("Audio contains only silence. Discarding to prevent hallucination.")
+        if peak <= self.silence_threshold:
+            debug("Audio contains only silence. Discarding to prevent hallucination.")
             return
         
         # Save to temp file

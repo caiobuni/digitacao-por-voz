@@ -10,7 +10,7 @@ class GroqTranscriber:
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
         if not self.api_key:
             raise ValueError("GROQ_API_KEY not found in environment or arguments.")
-        self.client = Groq(api_key=self.api_key)
+        self.client = Groq(api_key=self.api_key, timeout=30.0)
         self.model = model
         
         self.system_prompt = (
@@ -36,6 +36,11 @@ class GroqTranscriber:
             return transcription.text
         except Exception as e:
             print(f"Error during transcription: {e}")
+            try:
+                from logger import debug
+                debug(f"Error during transcription: {e}")
+            except Exception:
+                pass
             return f"[ERRO NA TRANSCRIÇÃO: {str(e)}]"
         finally:
             # Delete the temp file after transcription
