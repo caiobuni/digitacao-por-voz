@@ -1,6 +1,8 @@
 import pystray
 from PIL import Image, ImageDraw
 
+from config import get_input_device_index, list_input_devices, set_input_device_index
+
 
 def _draw_mic(color):
     image = Image.new("RGB", (64, 64), (30, 30, 30))
@@ -23,6 +25,32 @@ class TrayApp:
         self._rec_image = _draw_mic((220, 60, 70))
         self._create_icon()
 
+    def _mic_items(self):
+        items = []
+        current = get_input_device_index()
+        for dev in list_input_devices():
+            items.append(pystray.MenuItem(
+                dev["label"],
+                self._make_select(dev["index"]),
+                checked=self._make_checked(dev["index"], current),
+                radio=True
+            ))
+        if not items:
+            items.append(pystray.MenuItem("Nenhum microfone", None, enabled=False))
+        return items
+
+    def _make_select(self, index):
+        def _select(icon, item):
+            set_input_device_index(index)
+            if self.icon:
+                self.icon.update_menu()
+        return _select
+
+    def _make_checked(self, index, current):
+        def _checked(item):
+            return get_input_device_index() == index
+        return _checked
+
     def _create_icon(self):
         self.icon = pystray.Icon(
             "verbatim",
@@ -32,6 +60,7 @@ class TrayApp:
                 pystray.MenuItem("Abrir Histórico", self._handle_open_log),
                 pystray.MenuItem("Abrir dicionário", self._handle_open_dict),
                 pystray.MenuItem("Abrir lista negra", self._handle_open_blacklist),
+                pystray.MenuItem("Microfone", pystray.Menu(lambda: self._mic_items())),
                 pystray.MenuItem("Sair", self._wrapper_quit)
             )
         )
@@ -67,11 +96,3 @@ class TrayApp:
     def stop(self):
         if self.icon:
             self.icon.stop()
-
-
-if __name__ == "__main__":
-    def test_log(): print("Opening Log...")
-    def test_dict(): print("Opening dict...")
-    def test_quit(): print("Quitting...")
-    app = TrayApp(test_log, test_dict, test_quit)
-    app.run()

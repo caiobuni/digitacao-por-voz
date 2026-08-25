@@ -39,8 +39,9 @@ class AudioRecorder:
             sd.stop()
         except Exception:
             pass
-        device = sd.default.device[0]
-        debug(f"Mic device: {sd.query_devices(device)['name']}")
+        from config import get_input_device_index
+        device = get_input_device_index()
+        debug(f"Mic device: {device} {sd.query_devices(device)['name']}")
         self.stream = sd.InputStream(
             samplerate=self.sample_rate,
             channels=self.channels,
