@@ -32,6 +32,10 @@ class AudioRecorder:
         self.recording = True
         self.chunks = []
         self.last_speech_time = time.time()
+        try:
+            sd.stop()
+        except Exception:
+            pass
         self.stream = sd.InputStream(
             samplerate=self.sample_rate,
             channels=self.channels,

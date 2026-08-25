@@ -126,7 +126,13 @@ class VerbatimApp:
                 if hasattr(self, "tray"):
                     self.tray.set_recording(True)
                 self.is_recording = True
-                self.recorder.start()
+                try:
+                    self.recorder.start()
+                except Exception as e:
+                    print(f"Failed to start recorder: {e}")
+                    self.is_recording = False
+                    if hasattr(self, "tray"):
+                        self.tray.set_recording(False)
 
     def on_release(self, key):
         if key == keyboard.Key.pause:
